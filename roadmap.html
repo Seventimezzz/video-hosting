@@ -1,0 +1,684 @@
+<title>Frontend → AI Engineer</title>
+<style>
+:root{
+  --bg:#F7F5F0;
+  --surface:#FFFFFF;
+  --surface-2:#EFEBE2;
+  --border:#DDD6C7;
+  --ink:#1A2333;
+  --ink-soft:#4A5268;
+  --muted:#7A8095;
+  --accent:#B8703F;
+  --accent-ink:#7A481F;
+  --accent-soft:#F0DECB;
+  --good:#4A7A5C;
+  --good-soft:#DCEAE0;
+  --warn:#C08A2E;
+  --warn-soft:#F3E5C4;
+  --risk:#A44A42;
+  --risk-soft:#F2DCD9;
+  --line:#C9C2B0;
+  --shadow: 0 1px 2px rgba(26,35,51,0.06), 0 8px 24px -12px rgba(26,35,51,0.12);
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12141B;
+    --surface:#181B24;
+    --surface-2:#1F2330;
+    --border:#2C3140;
+    --ink:#EDEBE3;
+    --ink-soft:#B7BAC7;
+    --muted:#7E8494;
+    --accent:#E0A876;
+    --accent-ink:#F0DECB;
+    --accent-soft:#33291E;
+    --good:#8FC7A2;
+    --good-soft:#1E2E24;
+    --warn:#E3BD73;
+    --warn-soft:#332A17;
+    --risk:#E29088;
+    --risk-soft:#33201E;
+    --line:#333848;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+}
+
+:root[data-theme="dark"]{
+  --bg:#12141B;
+  --surface:#181B24;
+  --surface-2:#1F2330;
+  --border:#2C3140;
+  --ink:#EDEBE3;
+  --ink-soft:#B7BAC7;
+  --muted:#7E8494;
+  --accent:#E0A876;
+  --accent-ink:#F0DECB;
+  --accent-soft:#33291E;
+  --good:#8FC7A2;
+  --good-soft:#1E2E24;
+  --warn:#E3BD73;
+  --warn-soft:#332A17;
+  --risk:#E29088;
+  --risk-soft:#33201E;
+  --line:#333848;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{
+  max-width:920px;
+  margin:0 auto;
+  padding:64px 28px 120px;
+}
+
+/* ---------- Header ---------- */
+header.hero{
+  margin-bottom:56px;
+}
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  color:var(--accent-ink);
+  background:var(--accent-soft);
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:3px;
+  margin-bottom:18px;
+}
+h1{
+  font-family:'Fraunces', Georgia, serif;
+  font-weight:600;
+  font-size:clamp(32px, 5vw, 46px);
+  line-height:1.08;
+  letter-spacing:-0.01em;
+  margin:0 0 14px;
+  text-wrap:balance;
+}
+h1 em{
+  font-style:italic;
+  color:var(--accent);
+}
+.hero-sub{
+  font-size:17px;
+  color:var(--ink-soft);
+  max-width:62ch;
+  margin:0 0 28px;
+}
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.meta-chip{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  color:var(--ink-soft);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:6px 13px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.meta-chip b{ color:var(--ink); font-weight:600; }
+
+/* ---------- Section headers ---------- */
+.section-head{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  margin:64px 0 20px;
+}
+.section-head h2{
+  font-family:'Fraunces', Georgia, serif;
+  font-size:24px;
+  font-weight:600;
+  margin:0;
+}
+.section-head .rule{
+  flex:1;
+  height:1px;
+  background:var(--line);
+}
+.section-intro{
+  color:var(--ink-soft);
+  font-size:15px;
+  max-width:66ch;
+  margin:-6px 0 28px;
+}
+
+/* ---------- Timeline ---------- */
+.timeline{
+  position:relative;
+  border-left:2px solid var(--border);
+  margin-left:8px;
+  padding-left:0;
+}
+.stage{
+  position:relative;
+  padding:0 0 40px 32px;
+}
+.stage:last-child{ padding-bottom:8px; }
+.stage::before{
+  content:"";
+  position:absolute;
+  left:-7px;
+  top:4px;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:var(--surface);
+  border:2px solid var(--accent);
+}
+.stage.done::before{ background:var(--good); border-color:var(--good); }
+.stage.risk::before{ background:var(--risk); border-color:var(--risk); }
+
+.stage-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:22px 24px;
+  box-shadow:var(--shadow);
+}
+.stage-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+.stage-title{
+  font-family:'Fraunces', Georgia, serif;
+  font-size:19px;
+  font-weight:600;
+  margin:0;
+}
+.stage-dates{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  color:var(--muted);
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  padding-top:3px;
+}
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  padding:3px 9px;
+  border-radius:999px;
+  margin-bottom:10px;
+}
+.status-done{ background:var(--good-soft); color:var(--good); }
+.status-progress{ background:var(--warn-soft); color:var(--warn); }
+.status-upcoming{ background:var(--surface-2); color:var(--muted); }
+
+.stage-desc{
+  font-size:14.5px;
+  color:var(--ink-soft);
+  margin:8px 0 14px;
+}
+.stage-list{
+  margin:0 0 14px;
+  padding-left:20px;
+  font-size:14.5px;
+}
+.stage-list li{ margin-bottom:5px; }
+.stage-list li::marker{ color:var(--accent); }
+
+.deliverable{
+  background:var(--surface-2);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:13.5px;
+  color:var(--ink-soft);
+  margin-top:10px;
+}
+.deliverable b{ color:var(--ink); }
+
+.callout{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  font-size:13.5px;
+  border-radius:8px;
+  padding:10px 14px;
+  margin-top:10px;
+}
+.callout-risk{ background:var(--risk-soft); color:var(--accent-ink); }
+.callout-risk b{ color:var(--risk); }
+
+/* ---------- Critique ---------- */
+.critique-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+}
+.critique-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:4px solid var(--risk);
+  border-radius:8px;
+  padding:18px 22px;
+  box-shadow:var(--shadow);
+}
+.critique-item.warn{ border-left-color:var(--warn); }
+.critique-item.good{ border-left-color:var(--good); }
+.critique-item h3{
+  font-family:'Fraunces', Georgia, serif;
+  font-size:16.5px;
+  margin:0 0 6px;
+}
+.critique-item p{
+  font-size:14.5px;
+  color:var(--ink-soft);
+  margin:0;
+}
+.critique-item p + p{ margin-top:8px; }
+
+/* ---------- Table ---------- */
+.table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:10px; background:var(--surface); box-shadow:var(--shadow); }
+table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:560px; }
+th{
+  text-align:left;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--muted);
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface-2);
+}
+td{
+  padding:11px 16px;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+tr:last-child td{ border-bottom:none; }
+td.date{ font-family:'IBM Plex Mono', monospace; white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+
+/* ---------- Footer note ---------- */
+.final-note{
+  margin-top:64px;
+  padding:24px 26px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:14.5px;
+  color:var(--ink-soft);
+}
+.final-note b{ color:var(--ink); }
+
+@media (max-width:600px){
+  .wrap{ padding:40px 16px 80px; }
+  .stage{ padding-left:24px; }
+}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Roadmap · Frontend → AI Engineering · старт 19.08.2026</span>
+    <h1>От frontend-разработчика<br>к <em>AI Engineer</em></h1>
+    <p class="hero-sub">
+      5 лет опыта в клиентских приложениях (SmartTV, браузер, мобильные) →
+      добавляем слой backend + LLM-интеграции. Не смена профессии с нуля,
+      а расширение стека под новую нишу с меньшей конкуренцией и рынком
+      шире СНГ.
+    </p>
+    <div class="hero-meta">
+      <span class="meta-chip">⏱ <b>10–15 ч/нед</b> обучения</span>
+      <span class="meta-chip">🌍 переезд в Сербию через <b>6–12 мес</b></span>
+      <span class="meta-chip">🗣 английский <b>A2 → B2</b></span>
+      <span class="meta-chip">💼 занятость: <b>решение не принято</b></span>
+      <span class="meta-chip">🎬 сквозной pet-проект: <b>CineAgent</b></span>
+    </div>
+  </header>
+
+  <!-- ================= PET PROJECT ================= -->
+  <div class="section-head"><h2>Сквозной pet-проект: CineAgent</h2><div class="rule"></div></div>
+  <p class="section-intro">
+    Один проект вместо двух разных — закрывает и backend-этап, и LLM-этап.
+    Разговорный рекомендатель фильмов/сериалов: вместо фильтров — диалог
+    ("хочу что-то как Breaking Bad, но покороче и повеселее"), агент вызывает
+    инструменты поиска по своей БД и объясняет выбор, а не просто выдаёт список.
+    Выбран сознательно вместо RAG-чата по субтитрам — ближе к тому, что реально
+    называется «AI Engineer» в вакансиях (оркестрация инструментов, а не поиск
+    по вектору), и меньше похож на типовой учебный проект.
+  </p>
+
+  <div class="stage-card" style="margin-bottom:16px;">
+    <p class="stage-desc" style="margin-top:0;">Слои проекта и где какой навык из плана в него попадает:</p>
+    <ul class="stage-list">
+      <li><b>Данные:</b> каталог фильмов/сериалов через TMDB API (жанры, описание, длительность, актёры, рейтинги) → своя Postgres-схема</li>
+      <li><b>Семантика:</b> эмбеддинги описаний в pgvector — поиск «по вайбу», не только по тегам жанра</li>
+      <li><b>Профиль:</b> история просмотров/лайков пользователя — агент учитывает её без явного запроса</li>
+      <li><b>Инструменты агента:</b> <code>search_by_filters()</code>, <code>find_similar(title)</code>, <code>get_user_history()</code>, <code>compare(title_a, title_b)</code></li>
+      <li><b>Объяснимость:</b> structured output (JSON: кандидаты + reasoning) вместо голого текста — модель показывает, что учла и что отбросила</li>
+      <li><b>Frontend:</b> чат + карточки рекомендаций, стриминг «мыслей вслух», индикатор во время tool call — прямое применение опыта со стриминговым UI</li>
+    </ul>
+  </div>
+
+  <!-- ================= ROADMAP ================= -->
+  <div class="section-head"><h2>Этапы</h2><div class="rule"></div></div>
+  <p class="section-intro">
+    Даты — не жёсткий контракт, а ориентир при 10–15 ч/нед. Если решите
+    снизить нагрузку на frontend ближе к переезду — этапы 3–5 можно
+    сжать почти вдвое (отмечено внутри).
+  </p>
+
+  <div class="timeline">
+
+    <!-- STAGE 1 -->
+    <div class="stage done">
+      <div class="stage-card">
+        <span class="status-pill status-progress">Идёт · 11 / 17 пунктов</span>
+        <div class="stage-top">
+          <h3 class="stage-title">1. Python — основы</h3>
+          <span class="stage-dates">начато · до 21.09.2026</span>
+        </div>
+        <p class="stage-desc">
+          Синтаксис, типы, структуры данных, управляющие конструкции,
+          функции, comprehensions, модули/venv, ООП, ошибки, файлы —
+          пройдены. Осталось 5 пунктов из плана в CLAUDE.md.
+        </p>
+        <ul class="stage-list">
+          <li>Итераторы и генераторы (<code>__iter__</code>/<code>__next__</code>, <code>yield</code>)</li>
+          <li>Функциональщина: map/filter/reduce, декораторы, type hints</li>
+          <li>Асинхронность: asyncio, async/await vs event loop Node.js</li>
+          <li>Тестирование: pytest, fixtures, mocking</li>
+          <li>Стандартная библиотека: json, datetime, re, itertools + black/ruff</li>
+        </ul>
+        <div class="deliverable">📦 <b>Итог этапа:</b> уверенное чтение и написание идиоматичного Python-кода, достаточное для FastAPI и работы с LLM SDK.</div>
+      </div>
+    </div>
+
+    <!-- STAGE 2 -->
+    <div class="stage">
+      <div class="stage-card">
+        <span class="status-pill status-upcoming">Следующий</span>
+        <div class="stage-top">
+          <h3 class="stage-title">2. Backend-минимум</h3>
+          <span class="stage-dates">22.09 – 30.11.2026 (~10 нед)</span>
+        </div>
+        <p class="stage-desc">
+          Цель — не Senior Backend, а «уметь поднять API + БД + авторизацию
+          под свой проект». Жёсткий тайм-бокс: 10 недель, дальше — переход
+          к LLM, даже если что-то не идеально. Здесь строится backend-фундамент
+          <b>CineAgent</b> — пока без LLM, просто рабочий каталог с API.
+        </p>
+        <ul class="stage-list">
+          <li><b>HTTP/REST с нуля:</b> методы, статус-коды, заголовки, JSON-контракты</li>
+          <li><b>FastAPI</b> (не Flask/Django — ближе к тому, что используют в AI-стеке): роуты, Pydantic-модели, dependency injection</li>
+          <li><b>БД:</b> PostgreSQL — SQL-минимум (SELECT/JOIN/INSERT), затем SQLAlchemy/ORM; схема фильмов/жанров/пользователей для CineAgent</li>
+          <li><b>Интеграция с TMDB API:</b> загрузка каталога фильмов/сериалов (метаданные, жанры, описания, рейтинги) в свою БД</li>
+          <li><b>Авторизация:</b> JWT, хеширование паролей (bcrypt) — свой профиль пользователя с историей просмотров/лайков</li>
+          <li><b>Docker-минимум:</b> Dockerfile, docker-compose для локального Postgres + приложения</li>
+          <li>Деплой CineAgent API (без LLM-части) на Railway/Render/Fly.io — аналог понятен из фронтенд-опыта (Vercel/Netlify)</li>
+        </ul>
+        <div class="deliverable">📦 <b>Итог этапа:</b> CineAgent v0 — CRUD API поверх каталога TMDB с авторизацией и историей пользователя, задеплоенный, репозиторий открыт.</div>
+        <div class="callout callout-risk">⚠️ <b>Главный риск плана:</b> здесь легче всего застрять в «ещё немного доучу бекенд». Держите тайм-бокс — деплой хуже, но вовремя, лучше идеального, но бесконечного.</div>
+      </div>
+    </div>
+
+    <!-- STAGE 3 -->
+    <div class="stage">
+      <div class="stage-card">
+        <span class="status-pill status-upcoming">Параллельно с этапом 2</span>
+        <div class="stage-top">
+          <h3 class="stage-title">3. LLM API — первое знакомство</h3>
+          <span class="stage-dates">13.10 – 30.11.2026 (внахлёст с этапом 2)</span>
+        </div>
+        <p class="stage-desc">
+          Начинается на середине backend-этапа, не после. Это просто HTTP-запросы —
+          ждать «полной готовности» не нужно. Первые эксперименты — уже на данных CineAgent.
+        </p>
+        <ul class="stage-list">
+          <li>Anthropic/OpenAI API: обычные запросы, стриминг, system-промпты</li>
+          <li>Токены, контекстное окно, ценообразование — как это влияет на архитектуру продукта</li>
+          <li>Tool calling / function calling — базовый паттерн агентности</li>
+          <li>Промпт-инжиниринг: few-shot, структурированный вывод (JSON mode)</li>
+          <li>Пробный скрипт: LLM описывает/резюмирует карточку фильма из своей БД CineAgent</li>
+        </ul>
+        <div class="deliverable">📦 <b>Итог этапа:</b> CLI-скрипт на Python, который дергает LLM API и обрабатывает данные из БД CineAgent.</div>
+      </div>
+    </div>
+
+    <!-- STAGE 4 -->
+    <div class="stage">
+      <div class="stage-card">
+        <span class="status-pill status-upcoming">Ключевой этап</span>
+        <div class="stage-top">
+          <h3 class="stage-title">4. LLM-интеграция в продукт</h3>
+          <span class="stage-dates">01.12.2026 – 15.02.2027 (~11 нед)</span>
+        </div>
+        <p class="stage-desc">
+          Здесь собирается ваше отличие от «чистого» backend или ML-инженера:
+          продукт целиком — от UI до вызова модели. CineAgent v0 превращается
+          в полноценного разговорного агента-рекомендателя.
+        </p>
+        <ul class="stage-list">
+          <li><b>Векторный поиск:</b> эмбеддинги описаний фильмов в pgvector — поиск «по вайбу», не только по тегам жанра (<code>find_similar(title)</code>)</li>
+          <li><b>Инструменты агента:</b> <code>search_by_filters()</code>, <code>find_similar()</code>, <code>get_user_history()</code>, <code>compare(a, b)</code> поверх CRUD API из этапа 2</li>
+          <li><b>Оркестрация:</b> голый API без фреймворка на старте (осознанный выбор — фреймворки часто лишние), LangChain/LlamaIndex — опционально позже</li>
+          <li><b>Агенты:</b> ReAct-паттерн, multi-step tool use, память диалога + история пользователя как контекст</li>
+          <li><b>Объяснимость:</b> structured output (JSON: кандидаты + reasoning) — агент показывает, что учёл и что отбросил, не просто выдаёт список</li>
+          <li><b>Стриминг в UI:</b> SSE/WebSocket, «мысли вслух» и индикатор во время tool call — здесь ваш frontend-опыт даёт фору</li>
+          <li>Гардрейлы: обработка ошибок модели, rate limits, fallback-и, оценка стоимости запроса</li>
+        </ul>
+        <div class="deliverable">📦 <b>Итог этапа:</b> CineAgent v1 — разговорный рекомендатель с tool calling, семантическим поиском и объяснением выбора, задеплоен.</div>
+      </div>
+    </div>
+
+    <!-- STAGE 5 -->
+    <div class="stage">
+      <div class="stage-card">
+        <span class="status-pill status-upcoming">Портфолио + поиск</span>
+        <div class="stage-top">
+          <h3 class="stage-title">5. Третий проект + упаковка портфолио</h3>
+          <span class="stage-dates">16.02 – 15.04.2027 (~8 нед)</span>
+        </div>
+        <p class="stage-desc">
+          Третий проект — осознанно другой формат от CineAgent (не ещё один
+          tool-calling агент), чтобы портфолио показывало диапазон, а не одну
+          и ту же задачу дважды. Хороший кандидат — то, что не вошло в CineAgent:
+          RAG по неструктурированному тексту (например, спойлер-safe ассистент
+          по субтитрам конкретного фильма) или live/стриминговый сценарий
+          (running summary трансляции) — оба обсуждались как альтернативы
+          при выборе основного проекта.
+        </p>
+        <ul class="stage-list">
+          <li>Вариант: RAG по субтитрам с фильтром по таймкоду (не спойлерит то, что ещё не посмотрели)</li>
+          <li>Вариант: голосовой или мультимодальный интерфейс (аудио/картинки → LLM)</li>
+          <li>README с архитектурой, диаграммой, объяснением решений — это то, что реально читают на собеседовании</li>
+          <li>Резюме и LinkedIn — переписать под позиционирование "Frontend Engineer specializing in LLM products", не "джуна во всём"</li>
+        </ul>
+        <div class="deliverable">📦 <b>Итог этапа:</b> 3 проекта на GitHub, обновлённое резюме/LinkedIn, готовность откликаться.</div>
+      </div>
+    </div>
+
+    <!-- STAGE 6 -->
+    <div class="stage">
+      <div class="stage-card">
+        <span class="status-pill status-upcoming">Финал</span>
+        <div class="stage-top">
+          <h3 class="stage-title">6. Активный поиск работы</h3>
+          <span class="stage-dates">с 16.04.2027 — до оффера</span>
+        </div>
+        <p class="stage-desc">
+          Ориентир — начать поиск ещё во frontend-роли (переговорная позиция сильнее,
+          чем при поиске без дохода), совместить с приземлением в Сербии.
+        </p>
+        <ul class="stage-list">
+          <li>Названия для поиска: <i>AI Engineer, LLM Engineer, Applied AI Engineer, Forward Deployed Engineer</i></li>
+          <li>Не только СНГ-рынок: EU remote, US remote (с учётом часовых поясов), локальные вакансии в Сербии</li>
+          <li>Параллельно — нетворкинг: Twitter/X AI-комьюнити, локальные митапы в Белграде/Нови-Саде</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= ENGLISH TRACK ================= -->
+  <div class="section-head"><h2>Параллельный трек: английский A2 → B2</h2><div class="rule"></div></div>
+  <p class="section-intro">
+    Идёт всё время фонового плана, не блоком «после Python». Разрыв в 4 подуровня
+    (A2→B1→B2) за 6–12 месяцев при текущей нагрузке — амбициозно, честная оценка ниже.
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Период</th><th>Фокус</th><th>Формат</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="date">авг – окт 2026</td>
+          <td>Грамматика A2→B1, снятие ступора в речи</td>
+          <td>Репетитор/группа 2×/нед + Anki для лексики</td>
+        </tr>
+        <tr>
+          <td class="date">окт – дек 2026</td>
+          <td>Техническая лексика (IT, собеседования)</td>
+          <td>Чтение доки на английском вместо перевода, mock-интервью</td>
+        </tr>
+        <tr>
+          <td class="date">янв – мар 2027</td>
+          <td>B1 → B1+, разговорная беглость</td>
+          <td>Разговорный клуб/italki, подкасты на 1.0x без субтитров</td>
+        </tr>
+        <tr>
+          <td class="date">апр – июл 2027</td>
+          <td>B1+ → B2, интервью-английский</td>
+          <td>Живые mock-собеседования на английском, самопрезентация</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================= CRITIQUE ================= -->
+  <div class="section-head"><h2>Честная критика плана</h2><div class="rule"></div></div>
+  <p class="section-intro">
+    План здоровый и небезосновательный — но вот что в нём стоит держать под подозрением.
+  </p>
+
+  <div class="critique-grid">
+
+    <div class="critique-item">
+      <h3>Три больших трансформации одновременно — это перегрузка, а не план "по очереди"</h3>
+      <p>
+        Python → backend → LLM → переезд → английский B2 → смена профессии выглядят как
+        последовательность, но по факту с этапа 3 они все идут параллельно. 10–15 ч/нед —
+        это ~1.5–2 ч в будний день. На таком бюджете одновременно учить FastAPI/SQL,
+        LLM-паттерны и подтягивать английский с A2 до B2 — реально, но без запаса на
+        непредвиденное (аврал на основной работе, болезнь, спад мотивации).
+      </p>
+      <p><b>Что делать:</b> относиться к датам как к коридору ±3-4 недели, а не дедлайну. Если что-то одно начинает страдать — жертвовать глубиной backend-этапа, не английским и не практикой с LLM (это явно сформулированный приоритет в исходном плане).</p>
+    </div>
+
+    <div class="critique-item warn">
+      <h3>English A2 → B2 за 8–11 месяцев на самостоятельном режиме — оптимистичная оценка</h3>
+      <p>
+        По ориентирам CEFR один уровень (A2→B1 или B1→B2) — это обычно 200+ учебных часов
+        при регулярных занятиях с преподавателем. Два уровня за год при 10–15 ч/нед,
+        из которых английский — лишь часть, реалистичнее закрывают на твёрдый B1,
+        а не B2.
+      </p>
+      <p><b>Что делать:</b> закладывать B1+ как реалистичную цель к моменту переезда, а B2 — как цель уже в Сербии, где есть языковая среда и время (жизнь на сбережения год без работы — это ресурс, которым стоит явно воспользоваться для интенсива в первые месяцы там).</p>
+    </div>
+
+    <div class="critique-item warn">
+      <h3>Этап 2 (backend) — единственный этап без встроенного продукта, риск "учу ради знаний"</h3>
+      <p>
+        В отличие от этапов 3-5, где каждый шаг заканчивается артефактом, backend-этап
+        по формулировке "изучить основы" — самый расплывчатый и самый вероятный кандидат
+        на разрастание, что признано и в исходном конспекте как главный риск.
+      </p>
+      <p><b>Что делать:</b> план уже фиксирует тайм-бокс 10 недель — держитесь его буквально, включая деплой. Если к концу 10-й недели авторизация "почти работает" — деплойте как есть и чините в процессе этапа 4, а не откладывайте переход.</p>
+    </div>
+
+    <div class="critique-item">
+      <h3>"Занятость не определена" — решение откладывается, а оно определяет всё остальное</h3>
+      <p>
+        Разница между full-time и part-time/увольнением перед переездом — это разница
+        между планом на 12 месяцев и планом на 5-6. Пока решение не принято, план
+        держит self-consistent сценарий "full-time весь период", что по умолчанию
+        консервативно — не переоценивайте скорость, если сохраните полную нагрузку.
+      </p>
+      <p><b>Что делать:</b> зафиксировать решение не позже конца этапа 2 (~ноябрь 2026) — к этому моменту будет понятно, устраивает ли темп, и есть ли смысл снижать нагрузку на frontend ради ускорения LLM-этапов перед переездом.</p>
+    </div>
+
+    <div class="critique-item">
+      <h3>Портфолио из 3 похожих чат-ботов не сработает так, как из 3 разных задач</h3>
+      <p>
+        Риск: RAG-чат по PDF — самый частый учебный проект в этой нише. CineAgent
+        снижает этот риск (tool calling/агентность встречается реже, чем голый RAG),
+        но третий проект всё равно должен закрывать другую способность LLM, а не
+        быть вторым рекомендателем.
+      </p>
+      <p><b>Что делать:</b> третий проект уже сознательно выбран другим форматом
+      (этап 5) — но также ценно довести именно CineAgent до состояния "показать
+      вживую на созвоне" с реальным диалогом, а не просто ссылку на GitHub.</p>
+    </div>
+
+    <div class="critique-item warn">
+      <h3>CineAgent зависит от внешнего API (TMDB) — точка отказа вне вашего контроля</h3>
+      <p>
+        Rate limits, изменения схемы ответа или условий использования TMDB могут
+        сломать демо в неподходящий момент (например, прямо на собеседовании).
+        Отдельно: TMDB данные нельзя выдавать за собственную БД без указания
+        источника — это не критично для pet-проекта, но стоит явно упомянуть
+        атрибуцию в README.
+      </p>
+      <p><b>Что делать:</b> на этапе 2 сразу сохранять снэпшот каталога в свою БД
+      (не проксировать TMDB "вживую" при каждом запросе) — тогда демо не зависит
+      от доступности стороннего сервиса в момент показа.</p>
+    </div>
+
+    <div class="critique-item good">
+      <h3>Что в плане сильно: тайминг рынка и использование существующего актива</h3>
+      <p>
+        LLM-интеграция как инфраструктурный сдвиг на 5-10 лет — обоснованная ставка,
+        не хайп-погоня. Стратегия "остаться frontend-специалистом + добавить слой
+        LLM" вместо смены на 3-4 профессии — сильно снижает риск неудачи по сравнению
+        с попыткой стать ML Researcher или чистым backend-инженером с нуля.
+      </p>
+      <p>
+        Год жизни в Сербии на сбережениях без необходимости работать — редкий ресурс:
+        это время можно использовать не только на язык, но и на дожатие 2-3 проекта
+        и активный нетворкинг без давления "нужна зарплата уже сейчас".
+      </p>
+    </div>
+
+  </div>
+
+  <div class="final-note">
+    <b>Как обновлять этот план:</b> прогресс по Python уже трекается в
+    <code>CLAUDE.md</code> проекта (журнал уроков + чек-лист). Этот документ —
+    более крупная карта поверх него: имеет смысл сверяться раз в 2-4 недели
+    и сдвигать даты по факту, а не подгонять факт под даты.
+  </div>
+
+</div>
