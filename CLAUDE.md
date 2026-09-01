@@ -49,13 +49,13 @@ Postgres + авторизация + Docker) и параллельно закры
 Ничего из бизнес-логики ещё не пишем.
 
 - [x] Git-репозиторий: `git init`
-- [ ] `.gitignore` (Python, Docker, IDE, .env)
-- [ ] Структура каталогов проекта: `backend/`, `frontend/` (пока пустой),
+- [x] `.gitignore` (Python, Docker, IDE, .env)
+- [x] Структура каталогов проекта: `backend/`, `frontend/` (пока пустой),
       `docker/` или docker-compose в корне
-- [ ] Python: uv, зафиксировать версию Python, pyproject.toml
-- [ ] Установить и разобраться с Docker Desktop (Windows) — что такое образ,
+- [x] Python: uv, зафиксировать версию Python, pyproject.toml
+- [x] Установить и разобраться с Docker Desktop (Windows) — что такое образ,
       контейнер, volume, network, отличие от простого exe/процесса
-- [ ] docker-compose.yml с сервисами: `postgres`, `redis`, `minio` (пока без
+- [x] docker-compose.yml с сервисами: `postgres`, `redis`, `minio` (пока без
       своего приложения) — поднять, убедиться что все три живы
       (`docker compose ps`, логи, подключение клиентом/CLI к каждому)
 - [ ] Минимальный FastAPI-скелет: один эндпоинт `/health`, который отвечает
