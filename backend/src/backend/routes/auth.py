@@ -1,5 +1,7 @@
 from backend.config import settings
 from backend.database import get_db
+from backend.dependencies.auth import get_current_user
+from backend.models.user import User
 from backend.services.auth_service import (
     InvalidCredentialsError,
     InvalidRefreshTokenError,
@@ -106,3 +108,8 @@ async def logout(
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
     return {"detail": "logged out"}
+
+
+@router.get("/me", response_model=UserResponse)
+async def me(user: User = Depends(get_current_user)):
+    return user
