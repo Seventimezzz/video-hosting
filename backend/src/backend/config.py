@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
+    # TODO поменять на проде
+    cookie_secure: bool = False
     postgres_user: str
     postgres_password: str
     postgres_db: str
