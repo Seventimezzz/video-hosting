@@ -1,11 +1,8 @@
 from backend.models.user import User
 from backend.models.video import VideoStatus
-from backend.repositories.video_repository import (
-    add_video_upload,
-    get_video_by_id,
-    set_video_status,
-)
 from backend.repositories.video_repository import create_video as create_video_in_db
+from backend.repositories.video_repository import get_video_by_id, set_video_status
+from backend.repositories.video_upload_repository import add_video_upload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
