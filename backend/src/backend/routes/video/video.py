@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from backend.config import settings
 from backend.database import get_db
 from backend.dependencies.auth import get_current_user
 from backend.models.user import User
@@ -10,8 +11,10 @@ from backend.services.video_service import (
     VideoNotFoundError,
     create_video,
     start_video_upload,
+    upload_video,
+    upload_video_complete,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,7 +49,16 @@ class StartUploadRequest(BaseModel):
     total_size: int
 
 
-@router.post("/videos/{video_id}/upload")
+class StartUploadResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    status: VideoStatus
+    created_at: datetime
+    chunk_size: int
+
+
+@router.post("/videos/{video_id}/upload", response_model=StartUploadResponse)
 async def start_upload(
     video_id: int,
     data: StartUploadRequest,
@@ -58,7 +70,57 @@ async def start_upload(
     except VideoNotFoundError:
         raise HTTPException(status_code=404, detail="Video not found")
     except VideoNotBelongThisUserError:
-        raise HTTPException(status_code=403, detail="Video does not belong to this user")
+        raise HTTPException(
+            status_code=403, detail="Video does not belong to this user"
+        )
+    except UploadAlreadyStartedError:
+        raise HTTPException(status_code=409, detail="Video already registered")
+    return StartUploadResponse(
+        id=video.id,
+        title=video.title,
+        description=video.description,
+        status=video.status,
+        created_at=video.created_at,
+        chunk_size=settings.upload_chunk_size_bytes,
+    )
+
+
+@router.put("/videos/{video_id}/upload/chunks/{chunk_number}")
+async def upload_chunk(
+    video_id: int,
+    chunk_number: int,
+    request: Request,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    content = await request.body()
+    try:
+        video = await upload_video(session, video_id, user.id, chunk_number, content)
+    except VideoNotFoundError:
+        raise HTTPException(status_code=404, detail="Video not found")
+    except VideoNotBelongThisUserError:
+        raise HTTPException(
+            status_code=403, detail="Video does not belong to this user"
+        )
+    except UploadAlreadyStartedError:
+        raise HTTPException(status_code=409, detail="Video already registered")
+    return video
+
+
+@router.post("/videos/{video_id}/upload/complete")
+async def upload_complete(
+    video_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        video = await upload_video_complete(video_id, user.id, session)
+    except VideoNotFoundError:
+        raise HTTPException(status_code=404, detail="Video not found")
+    except VideoNotBelongThisUserError:
+        raise HTTPException(
+            status_code=403, detail="Video does not belong to this user"
+        )
     except UploadAlreadyStartedError:
         raise HTTPException(status_code=409, detail="Video already registered")
     return video
