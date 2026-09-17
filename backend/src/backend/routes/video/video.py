@@ -6,6 +6,9 @@ from backend.dependencies.auth import get_current_user
 from backend.models.user import User
 from backend.models.video import VideoStatus
 from backend.services.video_service import (
+    ChunksMissingError,
+    ChunksSizeMismatchError,
+    StorageUploadError,
     UploadAlreadyStartedError,
     VideoNotBelongThisUserError,
     VideoNotFoundError,
@@ -123,4 +126,12 @@ async def upload_complete(
         )
     except UploadAlreadyStartedError:
         raise HTTPException(status_code=409, detail="Video already registered")
+    except ChunksMissingError:
+        raise HTTPException(status_code=409, detail="Not all chunks were uploaded")
+    except ChunksSizeMismatchError:
+        raise HTTPException(
+            status_code=409, detail="Uploaded chunks do not match expected total size"
+        )
+    except StorageUploadError:
+        raise HTTPException(status_code=502, detail="Failed to upload video to storage")
     return video

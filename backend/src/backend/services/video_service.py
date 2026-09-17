@@ -1,3 +1,5 @@
+import asyncio
+import shutil
 from math import ceil
 
 from backend.config import settings
@@ -9,6 +11,7 @@ from backend.repositories.video_upload_repository import (
     add_video_upload,
     get_video_upload_by_video_id,
 )
+from backend.storage import s3_client
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -95,6 +98,10 @@ class ChunksSizeMismatchError(Exception):
     pass
 
 
+class StorageUploadError(Exception):
+    pass
+
+
 async def upload_video_complete(video_id: int, user_id: int, session: AsyncSession):
     video_upload = await get_video_upload_by_video_id(session, video_id)
     video = await get_video_by_id(session, video_id)
@@ -105,7 +112,9 @@ async def upload_video_complete(video_id: int, user_id: int, session: AsyncSessi
 
     chunk_paths = sorted(chunk_dir.glob("chunk_" + "[0-9]" * 6))
 
-    expected_chunk_count = ceil(video_upload.total_size / settings.upload_chunk_size_bytes)
+    expected_chunk_count = ceil(
+        video_upload.total_size / settings.upload_chunk_size_bytes
+    )
     chunk_numbers = [int(p.name.removeprefix("chunk_")) for p in chunk_paths]
 
     if chunk_numbers != list(range(1, expected_chunk_count + 1)):
@@ -126,8 +135,17 @@ async def upload_video_complete(video_id: int, user_id: int, session: AsyncSessi
         for chunk_path in chunk_paths:
             assembled_file.write(chunk_path.read_bytes())
 
-    # TODO: загрузить assembled_path в MinIO по video_upload.storage_path,
-    # затем удалить chunk_dir целиком (чанки + assembled_path)
+    try:
+        await asyncio.to_thread(
+            s3_client.upload_file,
+            str(assembled_path),
+            settings.minio_bucket,
+            video_upload.storage_path,
+        )
+    except Exception as e:
+        raise StorageUploadError(f"Failed to upload video {video_id} to storage") from e
+
+    shutil.rmtree(chunk_dir)
 
     set_video_status(video, VideoStatus.UPLOADED)
     await session.commit()

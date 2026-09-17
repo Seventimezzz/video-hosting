@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
     upload_tmp_dir: Path = BASE_DIR / "tmp" / "uploads"
 
+    minio_endpoint_url: str = "http://localhost:9000"
+    minio_root_user: str
+    minio_root_password: str
+    minio_bucket: str = "videos"
+
     model_config = SettingsConfigDict(env_file=END_FILE, extra="ignore")
 
     @property
