@@ -5,6 +5,7 @@ from backend.database import get_db
 from backend.dependencies.auth import get_current_user
 from backend.models.user import User
 from backend.models.video import VideoStatus
+from backend.repositories.video_repository import get_all_video
 from backend.services.video_service import (
     ChunksMissingError,
     ChunksSizeMismatchError,
@@ -16,12 +17,47 @@ from backend.services.video_service import (
     start_video_upload,
     upload_video,
     upload_video_complete,
+    video_by_id,
+)
+from backend.services.video_service import (
+    delete_video as delete_video_service,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
+
+
+@router.delete("/videos/{id}")
+async def delete_video(
+    id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        await delete_video_service(session, id, user.id)
+    except VideoNotFoundError:
+        raise HTTPException(status_code=404, detail="Video not found")
+    except VideoNotBelongThisUserError:
+        raise HTTPException(
+            status_code=403, detail="Video does not belong to this user"
+        )
+
+
+@router.get("/videos/{id}")
+async def video(id: int, session: AsyncSession = Depends(get_db)):
+    try:
+        video = await video_by_id(session, id)
+    except VideoNotFoundError:
+        raise HTTPException(status_code=404, detail="Video not found")
+    return video
+
+
+@router.get("/videos")
+async def all_video(session: AsyncSession = Depends(get_db)):
+    videos = await get_all_video(session)
+    return videos
 
 
 class CreateVideoRequest(BaseModel):

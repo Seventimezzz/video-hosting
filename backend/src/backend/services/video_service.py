@@ -5,7 +5,9 @@ from math import ceil
 from backend.config import settings
 from backend.models.user import User
 from backend.models.video import Video, VideoStatus
+from backend.models.video_upload import VideoUpload
 from backend.repositories.video_repository import create_video as create_video_in_db
+from backend.repositories.video_repository import delete_video as delete_video_in_db
 from backend.repositories.video_repository import get_video_by_id, set_video_status
 from backend.repositories.video_upload_repository import (
     add_video_upload,
@@ -150,5 +152,54 @@ async def upload_video_complete(video_id: int, user_id: int, session: AsyncSessi
     set_video_status(video, VideoStatus.UPLOADED)
     await session.commit()
     await session.refresh(video)
+
+    return video
+
+
+class StorageDeleteError(Exception):
+    pass
+
+
+async def _delete_video_upload_files(
+    video_upload: VideoUpload | None, video_id: int
+) -> None:
+    chunk_dir = settings.upload_tmp_dir / str(video_id)
+    if chunk_dir.exists():
+        shutil.rmtree(chunk_dir)
+
+    if video_upload is None:
+        return
+
+    try:
+        await asyncio.to_thread(
+            s3_client.delete_object,
+            Bucket=settings.minio_bucket,
+            Key=video_upload.storage_path,
+        )
+    except Exception as e:
+        raise StorageDeleteError(
+            f"Failed to delete video {video_id} from storage"
+        ) from e
+
+
+async def delete_video(session: AsyncSession, video_id: int, user_id: int) -> None:
+    video = await get_video_by_id(session, video_id)
+    video_upload = await get_video_upload_by_video_id(session, video_id)
+
+    if video is None:
+        raise VideoNotFoundError(f"Video with id {video_id} not found")
+
+    if video.owner_id != user_id:
+        raise VideoNotBelongThisUserError("Video does not belong to this user")
+
+    await _delete_video_upload_files(video_upload, video_id)
+    await delete_video_in_db(session, video, video_upload)
+
+
+async def video_by_id(session: AsyncSession, video_id: int) -> Video:
+    video = await get_video_by_id(session, video_id)
+
+    if video is None:
+        raise VideoNotFoundError(f"Video with id {video_id} not found")
 
     return video
