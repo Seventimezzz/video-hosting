@@ -26,7 +26,14 @@ class Settings(BaseSettings):
     minio_root_password: str
     minio_bucket: str = "videos"
 
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+
     model_config = SettingsConfigDict(env_file=END_FILE, extra="ignore")
+
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}/0"
 
     @property
     def database_url(self) -> str:
