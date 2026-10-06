@@ -6,6 +6,7 @@ from backend.config import settings
 from backend.models.user import User
 from backend.models.video import Video, VideoStatus
 from backend.models.video_upload import VideoUpload
+from backend.queue import video_queue
 from backend.repositories.video_repository import create_video as create_video_in_db
 from backend.repositories.video_repository import delete_video as delete_video_in_db
 from backend.repositories.video_repository import get_video_by_id, set_video_status
@@ -14,6 +15,7 @@ from backend.repositories.video_upload_repository import (
     get_video_upload_by_video_id,
 )
 from backend.storage import s3_client
+from backend.tasks import transcode_video
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -152,6 +154,8 @@ async def upload_video_complete(video_id: int, user_id: int, session: AsyncSessi
     set_video_status(video, VideoStatus.UPLOADED)
     await session.commit()
     await session.refresh(video)
+
+    video_queue.enqueue(transcode_video, video.id)
 
     return video
 
