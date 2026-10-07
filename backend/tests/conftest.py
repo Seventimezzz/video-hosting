@@ -1,17 +1,17 @@
 import shutil
 from collections.abc import AsyncGenerator
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
-from sqlalchemy import delete, select
-
 from backend.config import settings
 from backend.database import async_session_factory
 from backend.models.refresh_token import RefreshToken
 from backend.models.video import Video
 from backend.models.video_upload import VideoUpload
 from backend.repositories.user_repository import get_user_by_email
+from httpx import AsyncClient
+from sqlalchemy import delete, select
 
 
 @pytest.fixture
@@ -27,6 +27,15 @@ async def unique_email() -> AsyncGenerator[str, None]:
             )
             await session.delete(user)
             await session.commit()
+
+
+@pytest.fixture(autouse=True)
+def mock_enqueue():
+    # upload_video_complete ставит transcode_video в очередь. Без мока тесты
+    # писали бы в настоящий Redis, а запущенный воркер пытался бы
+    # транскодировать тестовые "файлы" из нескольких байт.
+    with patch("backend.services.video_service.video_queue") as mock_queue:
+        yield mock_queue.enqueue
 
 
 @pytest.fixture(autouse=True)
@@ -46,7 +55,11 @@ async def _clean_videos(unique_email):
         user = await get_user_by_email(session, unique_email)
         if user is not None:
             video_ids = (
-                (await session.execute(select(Video.id).where(Video.owner_id == user.id)))
+                (
+                    await session.execute(
+                        select(Video.id).where(Video.owner_id == user.id)
+                    )
+                )
                 .scalars()
                 .all()
             )
@@ -58,7 +71,9 @@ async def _clean_videos(unique_email):
                 await session.commit()
 
 
-async def register_and_login(client: AsyncClient, email: str, password: str = "mypassword"):
+async def register_and_login(
+    client: AsyncClient, email: str, password: str = "mypassword"
+):
     await client.post("/register", json={"email": email, "password": password})
     await client.post("/login", json={"email": email, "password": password})
 

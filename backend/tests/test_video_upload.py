@@ -1,12 +1,13 @@
 from unittest.mock import patch
 
 import pytest
+from backend.config import settings
+from backend.tasks import transcode_video
+from conftest import create_video as _create_video
+from conftest import register_and_login as _register_and_login
 from httpx import ASGITransport, AsyncClient
 
 from backend import app
-from backend.config import settings
-from conftest import create_video as _create_video
-from conftest import register_and_login as _register_and_login
 
 
 @pytest.fixture
@@ -30,7 +31,9 @@ async def _start_upload(client: AsyncClient, video_id: int, total_size: int):
     )
 
 
-async def _upload_chunk(client: AsyncClient, video_id: int, chunk_number: int, content: bytes):
+async def _upload_chunk(
+    client: AsyncClient, video_id: int, chunk_number: int, content: bytes
+):
     return await client.put(
         f"/videos/{video_id}/upload/chunks/{chunk_number}", content=content
     )
@@ -40,7 +43,7 @@ async def _complete_upload(client: AsyncClient, video_id: int):
     return await client.post(f"/videos/{video_id}/upload/complete")
 
 
-async def test_full_upload_flow_success(unique_email, mock_s3_upload):
+async def test_full_upload_flow_success(unique_email, mock_s3_upload, mock_enqueue):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -68,6 +71,7 @@ async def test_full_upload_flow_success(unique_email, mock_s3_upload):
     mock_s3_upload.assert_called_once()
     assert mock_s3_upload.call_args.args[1] == settings.minio_bucket
     assert mock_s3_upload.call_args.args[2] == f"videos/{video_id}/original.mp4"
+    mock_enqueue.assert_called_once_with(transcode_video, video_id)
 
 
 async def test_upload_chunk_twice_is_idempotent(unique_email, mock_s3_upload):
@@ -95,7 +99,9 @@ async def test_upload_chunk_twice_is_idempotent(unique_email, mock_s3_upload):
     assert complete_response.json()["status"] == "uploaded"
 
 
-async def test_complete_upload_fails_when_chunk_missing(unique_email, mock_s3_upload):
+async def test_complete_upload_fails_when_chunk_missing(
+    unique_email, mock_s3_upload, mock_enqueue
+):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -114,6 +120,7 @@ async def test_complete_upload_fails_when_chunk_missing(unique_email, mock_s3_up
 
     assert complete_response.status_code == 409
     mock_s3_upload.assert_not_called()
+    mock_enqueue.assert_not_called()
 
 
 async def test_upload_chunk_without_starting_upload_fails(unique_email, mock_s3_upload):
@@ -172,7 +179,9 @@ async def test_upload_chunk_for_video_of_another_user(unique_email):
     assert response.status_code == 403
 
 
-async def test_complete_upload_reports_storage_failure(unique_email, mock_s3_upload):
+async def test_complete_upload_reports_storage_failure(
+    unique_email, mock_s3_upload, mock_enqueue
+):
     mock_s3_upload.side_effect = Exception("boom")
 
     async with AsyncClient(
@@ -188,3 +197,5 @@ async def test_complete_upload_reports_storage_failure(unique_email, mock_s3_upl
         response = await _complete_upload(client, video_id)
 
     assert response.status_code == 502
+    # Файл не попал в MinIO, значит воркеру нечего транскодировать.
+    mock_enqueue.assert_not_called()

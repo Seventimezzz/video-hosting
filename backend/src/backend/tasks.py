@@ -10,6 +10,32 @@ from backend.repositories.video_repository import get_video_by_id, set_video_sta
 from backend.repositories.video_upload_repository import get_video_upload_by_video_id
 from backend.storage import s3_client
 
+SEGMENT_SECONDS = 4
+
+RENDITIONS = [
+    {
+        "name": "1080p",
+        "height": 1080,
+        "bitrate": "5000k",
+        "maxrate": "5350k",
+        "bufsize": "7500k",
+    },
+    {
+        "name": "720p",
+        "height": 720,
+        "bitrate": "2800k",
+        "maxrate": "2996k",
+        "bufsize": "4200k",
+    },
+    {
+        "name": "480p",
+        "height": 480,
+        "bitrate": "1400k",
+        "maxrate": "1498k",
+        "bufsize": "2100k",
+    },
+]
+
 
 def transcode_video(video_id: int) -> None:
     asyncio.run(_transcode_video_async(video_id))
@@ -17,6 +43,59 @@ def transcode_video(video_id: int) -> None:
 
 class TranscodeError(Exception):
     pass
+
+
+def _build_ffmpeg_command(input_path: Path, output_dir: Path) -> list[str]:
+    count = len(RENDITIONS)
+
+    split_labels = "".join(f"[v{i}]" for i in range(count))
+    filters = [f"[0:v]split={count}{split_labels}"]
+    for i, rendition in enumerate(RENDITIONS):
+        filters.append(f"[v{i}]scale=-2:{rendition['height']}[v{i}out]")
+
+    command = ["ffmpeg", "-i", str(input_path), "-filter_complex", "; ".join(filters)]
+
+    for i, rendition in enumerate(RENDITIONS):
+        command += [
+            "-map",
+            f"[v{i}out]",
+            f"-c:v:{i}",
+            "libx264",
+            f"-b:v:{i}",
+            rendition["bitrate"],
+            f"-maxrate:v:{i}",
+            rendition["maxrate"],
+            f"-bufsize:v:{i}",
+            rendition["bufsize"],
+        ]
+
+    for i in range(count):
+        command += ["-map", "0:a", f"-c:a:{i}", "aac", f"-b:a:{i}", "128k"]
+
+    stream_map = " ".join(
+        f"v:{i},a:{i},name:{rendition['name']}"
+        for i, rendition in enumerate(RENDITIONS)
+    )
+
+    command += [
+        "-force_key_frames",
+        f"expr:gte(t,n_forced*{SEGMENT_SECONDS})",
+        "-f",
+        "hls",
+        "-hls_time",
+        str(SEGMENT_SECONDS),
+        "-hls_playlist_type",
+        "vod",
+        "-master_pl_name",
+        "master.m3u8",
+        "-var_stream_map",
+        stream_map,
+        "-hls_segment_filename",
+        str(output_dir / "%v" / "segment_%03d.ts"),
+        str(output_dir / "%v" / "playlist.m3u8"),
+    ]
+
+    return command
 
 
 async def _transcode_video_async(video_id: int) -> None:
@@ -44,24 +123,12 @@ async def _transcode_video_async(video_id: int) -> None:
 
                 hls_dir.mkdir()
 
+                for rendition in RENDITIONS:
+                    (hls_dir / rendition["name"]).mkdir()
+
                 result = await asyncio.to_thread(
                     subprocess.run,
-                    [
-                        "ffmpeg",
-                        "-i",
-                        str(original_path),
-                        "-c:v",
-                        "libx264",
-                        "-c:a",
-                        "aac",
-                        "-hls_time",
-                        "4",
-                        "-hls_playlist_type",
-                        "vod",
-                        "-hls_segment_filename",
-                        str(hls_dir / "segment_%03d.ts"),
-                        str(hls_dir / "playlist.m3u8"),
-                    ],
+                    _build_ffmpeg_command(original_path, hls_dir),
                     capture_output=True,
                     text=True,
                     check=False,
@@ -90,8 +157,3 @@ async def _transcode_video_async(video_id: int) -> None:
         else:
             set_video_status(video, VideoStatus.READY)
             await session.commit()
-
-
-def ping_task(x: int) -> int:
-    print(f"ping_task {x}")
-    return x * 2
