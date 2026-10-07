@@ -23,10 +23,30 @@ from backend.services.video_service import (
     delete_video as delete_video_service,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
+
+
+class VideoResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str
+    owner_id: int
+    status: VideoStatus
+    created_at: datetime
+    # Внутренний ключ в бакете: нужен для playback_url, но клиенту не отдаётся.
+    hls_master_key: str | None = Field(default=None, exclude=True)
+
+    @computed_field
+    @property
+    def playback_url(self) -> str | None:
+        if self.hls_master_key is None:
+            return None
+        return f"{settings.media_url_prefix}/{self.hls_master_key}"
 
 
 @router.delete("/videos/{id}")
@@ -45,7 +65,7 @@ async def delete_video(
         )
 
 
-@router.get("/videos/{id}")
+@router.get("/videos/{id}", response_model=VideoResponse)
 async def video(id: int, session: AsyncSession = Depends(get_db)):
     try:
         video = await video_by_id(session, id)
@@ -54,7 +74,7 @@ async def video(id: int, session: AsyncSession = Depends(get_db)):
     return video
 
 
-@router.get("/videos")
+@router.get("/videos", response_model=list[VideoResponse])
 async def all_video(session: AsyncSession = Depends(get_db)):
     videos = await get_all_video(session)
     return videos
@@ -124,7 +144,9 @@ async def start_upload(
     )
 
 
-@router.put("/videos/{video_id}/upload/chunks/{chunk_number}")
+@router.put(
+    "/videos/{video_id}/upload/chunks/{chunk_number}", response_model=VideoResponse
+)
 async def upload_chunk(
     video_id: int,
     chunk_number: int,
@@ -146,7 +168,7 @@ async def upload_chunk(
     return video
 
 
-@router.post("/videos/{video_id}/upload/complete")
+@router.post("/videos/{video_id}/upload/complete", response_model=VideoResponse)
 async def upload_complete(
     video_id: int,
     user: User = Depends(get_current_user),

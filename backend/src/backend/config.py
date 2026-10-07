@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     minio_root_user: str
     minio_root_password: str
     minio_bucket: str = "videos"
+    # Префикс, под которым nginx отдаёт бакет (location /media/ в nginx.conf).
+    media_url_prefix: str = "/media"
 
     redis_host: str = "localhost"
     redis_port: int = 6379

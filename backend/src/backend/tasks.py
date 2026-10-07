@@ -6,7 +6,11 @@ from pathlib import Path
 from backend.config import settings
 from backend.database import async_session_factory
 from backend.models.video import VideoStatus
-from backend.repositories.video_repository import get_video_by_id, set_video_status
+from backend.repositories.video_repository import (
+    get_video_by_id,
+    mark_video_ready,
+    set_video_status,
+)
 from backend.repositories.video_upload_repository import get_video_upload_by_video_id
 from backend.storage import s3_client
 
@@ -109,6 +113,8 @@ async def _transcode_video_async(video_id: int) -> None:
 
         await session.commit()
 
+        hls_prefix = f"videos/{video_id}/hls"
+
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 tmp_path = Path(tmp_dir)
@@ -144,7 +150,7 @@ async def _transcode_video_async(video_id: int) -> None:
                         continue
 
                     relative_path = file_path.relative_to(hls_dir)
-                    s3_key = f"videos/{video_id}/hls/{relative_path.as_posix()}"
+                    s3_key = f"{hls_prefix}/{relative_path.as_posix()}"
 
                     await asyncio.to_thread(
                         s3_client.upload_file,
@@ -157,5 +163,5 @@ async def _transcode_video_async(video_id: int) -> None:
             await session.commit()
             raise
         else:
-            set_video_status(video, VideoStatus.READY)
+            mark_video_ready(video, f"{hls_prefix}/master.m3u8")
             await session.commit()

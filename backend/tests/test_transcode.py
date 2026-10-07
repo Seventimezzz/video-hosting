@@ -76,6 +76,12 @@ async def _get_status(video_id: int) -> VideoStatus:
         return video.status
 
 
+async def _get_hls_master_key(video_id: int) -> str | None:
+    async with async_session_factory() as session:
+        video = await get_video_by_id(session, video_id)
+        return video.hls_master_key
+
+
 async def test_transcode_success_uploads_hls_and_marks_ready(
     unique_email, mock_s3, mock_ffmpeg
 ):
@@ -86,10 +92,13 @@ async def test_transcode_success_uploads_hls_and_marks_ready(
         await _transcode_video_async(video_id)
 
     assert await _get_status(video_id) == VideoStatus.READY
+    # READY ставится через mark_video_ready вместе с ключом, а не через set_video_status.
     assert [call.args[1] for call in status_spy.call_args_list] == [
         VideoStatus.PROCESSING,
-        VideoStatus.READY,
     ]
+    assert (
+        await _get_hls_master_key(video_id) == f"videos/{video_id}/hls/master.m3u8"
+    )
 
     mock_s3.download_file.assert_called_once()
     assert mock_s3.download_file.call_args.args[:2] == (
@@ -122,6 +131,7 @@ async def test_transcode_marks_failed_when_ffmpeg_fails(
 
     assert await _get_status(video_id) == VideoStatus.FAILED
     mock_s3.upload_file.assert_not_called()
+    assert await _get_hls_master_key(video_id) is None
 
 
 async def test_transcode_marks_failed_when_download_fails(
@@ -135,6 +145,7 @@ async def test_transcode_marks_failed_when_download_fails(
 
     assert await _get_status(video_id) == VideoStatus.FAILED
     mock_ffmpeg.assert_not_called()
+    assert await _get_hls_master_key(video_id) is None
 
 
 async def test_transcode_marks_failed_when_hls_upload_fails(
@@ -148,6 +159,8 @@ async def test_transcode_marks_failed_when_hls_upload_fails(
         await _transcode_video_async(video_id)
 
     assert await _get_status(video_id) == VideoStatus.FAILED
+    # Часть файлов могла не загрузиться — ссылаться на такой плейлист нельзя.
+    assert await _get_hls_master_key(video_id) is None
 
 
 def test_build_ffmpeg_command_has_variant_per_rendition():

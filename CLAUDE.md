@@ -348,6 +348,17 @@ practices. Я учусь, а не делегирую.
   это обратные слэши. Исправлено на `.as_posix()`, тест
   `test_build_ffmpeg_command_has_variant_per_rendition` теперь требует прямые
   слэши. Видео, транскодированные до фикса (79, 80), не воспроизводятся.
+- `playback_url` (написан Claude по просьбе): колонка `videos.hls_master_key`
+  (nullable, миграция `b3f1c2d4e5a6_add_hls_master_key_to_videos`, написана
+  вручную). `video_repository.mark_video_ready` ставит `READY` и ключ вместе
+  (инвариант: `ready` ⇔ ключ заполнен), его вызывает `transcode_video` при
+  успехе. Схема `VideoResponse` (`from_attributes`, `hls_master_key`
+  исключён из JSON, `computed_field` `playback_url` = `settings.media_url_prefix`
+  + ключ) подключена как `response_model` у get/list/chunk/complete. Тесты:
+  в `test_transcode.py` проверяется ключ при успехе и `None` при всех трёх
+  ошибках, в `test_video_crud.py` добавлены 3 теста на `playback_url`.
+- Отложено: `delete_video` удаляет из MinIO только `original.mp4`. HLS
+  удалённого видео остаётся в бакете и с новой политикой публично доступен.
 
 ### Этап 6 — Докеризация всего приложения + докрутка тестов
 

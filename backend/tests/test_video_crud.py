@@ -1,5 +1,8 @@
 from unittest.mock import patch
 
+from backend.config import settings
+from backend.database import async_session_factory
+from backend.repositories.video_repository import get_video_by_id, mark_video_ready
 from httpx import ASGITransport, AsyncClient
 
 from backend import app
@@ -171,3 +174,64 @@ async def test_delete_nonexistent_video(unique_email):
         response = await client.delete("/videos/999999")
 
     assert response.status_code == 404
+
+
+async def _mark_ready(video_id: int) -> str:
+    # Состояние «воркер успешно транскодировал»: сам воркер покрыт в test_transcode.py.
+    key = f"videos/{video_id}/hls/master.m3u8"
+    async with async_session_factory() as session:
+        video = await get_video_by_id(session, video_id)
+        mark_video_ready(video, key)
+        await session.commit()
+    return key
+
+
+async def test_get_video_without_hls_has_null_playback_url(unique_email):
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        await _register_and_login(client, unique_email)
+        video_id = await _create_video(client)
+
+        response = await client.get(f"/videos/{video_id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["playback_url"] is None
+    assert "hls_master_key" not in body
+
+
+async def test_get_ready_video_has_playback_url(unique_email):
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        await _register_and_login(client, unique_email)
+        video_id = await _create_video(client)
+        key = await _mark_ready(video_id)
+
+        response = await client.get(f"/videos/{video_id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ready"
+    assert body["playback_url"] == f"{settings.media_url_prefix}/{key}"
+    # Внутренний ключ хранилища наружу не отдаётся.
+    assert "hls_master_key" not in body
+
+
+async def test_list_videos_includes_playback_url(unique_email):
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        await _register_and_login(client, unique_email)
+        ready_id = await _create_video(client, title="ready")
+        pending_id = await _create_video(client, title="pending")
+        key = await _mark_ready(ready_id)
+
+        response = await client.get("/videos")
+
+    assert response.status_code == 200
+    by_id = {video["id"]: video for video in response.json()}
+    assert by_id[ready_id]["playback_url"] == f"{settings.media_url_prefix}/{key}"
+    assert by_id[pending_id]["playback_url"] is None
+    assert all("hls_master_key" not in video for video in by_id.values())

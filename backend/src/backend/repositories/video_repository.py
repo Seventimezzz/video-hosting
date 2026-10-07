@@ -35,6 +35,13 @@ def set_video_status(video: Video, status: VideoStatus) -> Video:
     return video
 
 
+def mark_video_ready(video: Video, hls_master_key: str) -> Video:
+    # Статус и ключ меняются только вместе: READY <=> hls_master_key заполнен.
+    video.status = VideoStatus.READY
+    video.hls_master_key = hls_master_key
+    return video
+
+
 async def get_all_video(session: AsyncSession) -> list[Video]:
     result = await session.execute(select(Video))
     return list(result.scalars().all())
