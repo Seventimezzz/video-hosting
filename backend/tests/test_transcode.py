@@ -166,4 +166,8 @@ def test_build_ffmpeg_command_has_variant_per_rendition():
         "v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:480p"
     )
     assert command[command.index("-master_pl_name") + 1] == "master.m3u8"
-    assert command[-1] == str(Path("out") / "%v" / "playlist.m3u8")
+    # Только прямые слэши: ffmpeg берёт из этих путей ссылки для master.m3u8,
+    # и "\" на Windows сломал бы плейлист (браузер запросит 1080p%5Cplaylist.m3u8).
+    assert command[-1] == "out/%v/playlist.m3u8"
+    segment_pattern = command[command.index("-hls_segment_filename") + 1]
+    assert segment_pattern == "out/%v/segment_%03d.ts"

@@ -37,6 +37,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "127.0.0.1"
+          },
           "configurations": {
             "production": { "buildTarget": "video-admin:build:production" },
             "development": { "buildTarget": "video-admin:build:development" }

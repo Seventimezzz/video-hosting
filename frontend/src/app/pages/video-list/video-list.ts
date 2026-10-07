@@ -20,7 +20,9 @@ const POLL_INTERVAL_MS = 3000;
       <p class="error">{{ error() }}</p>
     }
     @if (videos() === null) {
-      <p class="muted">Загрузка…</p>
+      @if (!error()) {
+        <p class="muted">Загрузка…</p>
+      }
     } @else if (videos()!.length === 0) {
       <p class="muted">Пока нет ни одного видео.</p>
     } @else {

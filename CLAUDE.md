@@ -325,6 +325,30 @@ practices. Я учусь, а не делегирую.
   Claude по явной просьбе пользователя. Контракт API: ответы `GET /videos*`
   содержат `playback_url: string | null`.
 
+**Шаги/находки:**
+- `docker/nginx/nginx.conf` и сервис `nginx` в compose написаны Claude по
+  просьбе пользователя. Конфиг монтируется как `conf.d/default.conf` (только
+  блок `server`). Важные места: слэш в конце `proxy_pass` у `/api/` (срезает
+  префикс), `client_max_body_size 10m` (дефолт 1 МБ < чанка 5 МБ),
+  `proxy_read_timeout 600s` (синхронный `upload/complete` на больших файлах
+  дольше 60с), `Host $host` + `Upgrade`/`Connection` для dev-сервера Angular.
+- При первом запуске nginx: (1) `ng serve` слушал только IPv6 `[::1]`, а
+  Docker Desktop ходит на `host.docker.internal` по IPv4 → 502; починено
+  `"host": "127.0.0.1"` в `angular.json`. (2) Редирект `/api` → `/api/` уходил
+  на `localhost:80` (внутренний порт контейнера); починено
+  `absolute_redirect off`. Приложение открывается только через
+  `http://localhost:8080`: на `:4200` `/api/*` отдаёт `index.html`.
+- `backend/scripts/init_storage.py` (написан Claude по просьбе): идемпотентно
+  создаёт бакет и вешает политику анонимного `s3:GetObject` на
+  `videos/*/hls/*`. Проверено через nginx: HLS → 200, `original.mp4` и
+  листинг → 403, `Range` на сегменте → 206.
+- Найден и починен (с согласия пользователя) баг Этапа 4: `master.m3u8`
+  ссылался на варианты как `1080p\playlist.m3u8`, потому что
+  `_build_ffmpeg_command` передавал ffmpeg пути через `str(Path)`, а на Windows
+  это обратные слэши. Исправлено на `.as_posix()`, тест
+  `test_build_ffmpeg_command_has_variant_per_rendition` теперь требует прямые
+  слэши. Видео, транскодированные до фикса (79, 80), не воспроизводятся.
+
 ### Этап 6 — Докеризация всего приложения + докрутка тестов
 
 Цель: весь стек поднимается одной командой, тесты покрывают весь путь.

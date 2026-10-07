@@ -27,6 +27,17 @@ services:
     volumes:
       - minio_data:/data
 
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - minio
+
 volumes:
   postgres_data:
   minio_data:

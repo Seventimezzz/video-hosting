@@ -91,8 +91,10 @@ def _build_ffmpeg_command(input_path: Path, output_dir: Path) -> list[str]:
         "-var_stream_map",
         stream_map,
         "-hls_segment_filename",
-        str(output_dir / "%v" / "segment_%03d.ts"),
-        str(output_dir / "%v" / "playlist.m3u8"),
+        # as_posix(): из этих путей ffmpeg строит ссылки внутри master.m3u8,
+        # а в URL разделитель только "/". str() на Windows дал бы "1080p\playlist.m3u8".
+        (output_dir / "%v" / "segment_%03d.ts").as_posix(),
+        (output_dir / "%v" / "playlist.m3u8").as_posix(),
     ]
 
     return command
