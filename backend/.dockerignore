@@ -1,0 +1,8 @@
+# Не отправлять в контекст сборки: локальное окружение Windows, кэши, тесты.
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+tests/
+path/
+.env

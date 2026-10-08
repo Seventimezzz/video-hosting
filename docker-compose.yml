@@ -1,3 +1,21 @@
+# Полный стек одной командой:  docker compose up -d --build
+# Приложение: http://localhost:8080
+#
+# Режим разработки (FastAPI, воркер и ng serve на хосте, с hot reload):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# Общие настройки трёх сервисов из образа бэкенда. "x-" — расширение compose,
+# сам по себе сервисом не является; &backend — YAML-якорь, <<: *backend — вставка.
+x-backend: &backend
+  build: ./backend
+  image: video-admin-backend
+  env_file: .env
+  environment:
+    # Внутри сети Docker сервисы находят друг друга по именам, а не через localhost.
+    POSTGRES_HOST: postgres
+    REDIS_HOST: redis
+    MINIO_ENDPOINT_URL: http://minio:9000
+
 services:
   postgres:
     image: postgres:16
@@ -9,11 +27,22 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ — экранирование: переменную подставит shell внутри контейнера, а не compose.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   minio:
     image: minio/minio
@@ -26,18 +55,65 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # Одноразовый: накатывает миграции, готовит бакет и завершается с кодом 0.
+  migrate:
+    <<: *backend
+    command: sh -c "alembic upgrade head && python scripts/init_storage.py"
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    # "<<:" сливает только верхний уровень: свой environment целиком заменяет
+    # якорный, поэтому общие переменные повторены.
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      MINIO_ENDPOINT_URL: http://minio:9000
+      # Чанки загрузки — в volume, чтобы недокачанное пережило перезапуск контейнера.
+      UPLOAD_TMP_DIR: /data/uploads
+    volumes:
+      - upload_tmp:/data/uploads
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    # В Linux есть fork(), поэтому обычный Worker, без SimpleWorker из Windows.
+    command: rq worker video_processing --url redis://redis:6379/0
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
   nginx:
-    image: nginx:stable-alpine
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     ports:
       - "8080:80"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
     depends_on:
+      - api
       - minio
 
 volumes:
   postgres_data:
   minio_data:
+  upload_tmp:

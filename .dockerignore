@@ -1,0 +1,9 @@
+# Контекст сборки образа nginx — корень репозитория, но нужны ему только
+# frontend/ (без зависимостей и артефактов) и docker/nginx/.
+.git/
+backend/
+tmp/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+.env

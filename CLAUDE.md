@@ -291,16 +291,16 @@ practices. Я учусь, а не делегирую.
   `fastapi.testclient` в одном из старых тестов; лечится переводом теста на
   `AsyncClient` + `ASGITransport`.
 
-### Этап 5 — Раздача HLS и плеер
+### Этап 5 — Раздача HLS и плеер (закрыт)
 
 Цель: посмотреть загруженное видео в браузере через HLS.
 
-- nginx: конфиг для раздачи сегментов (или проксирования к MinIO), range
-  requests, CORS если нужно
-- SPA: страница логина, страница загрузки (с прогрессом), список видео,
-  плеер на hls.js
-- Ручная проверка полного пути: логин → загрузка mp4 → дождаться обработки →
-  посмотреть в плеере
+- [x] nginx: проксирование `/media/` к MinIO, range requests (206 проверен),
+      CORS не нужен благодаря одному origin
+- [x] SPA: страница логина, страница загрузки (с прогрессом), список видео,
+      плеер на hls.js (с выбором качества)
+- [x] Ручная проверка полного пути: логин → загрузка mp4 → дождаться обработки →
+      посмотреть в плеере. Пройдена пользователем: видео проигрывается
 
 **Принятые решения:**
 - Доступ к HLS: nginx проксирует `/media/` → MinIO (бакет `videos`).
@@ -369,6 +369,22 @@ practices. Я учусь, а не делегирую.
 - Обзор покрытия тестами: где дыры, добавить интеграционные тесты (реальный
   Postgres/Redis в тестах через testcontainers или docker-compose.test.yml)
 - README с инструкцией запуска
+
+**Шаги/находки:**
+- Docker-обвязка написана Claude по просьбе пользователя:
+  `backend/Dockerfile` (python:3.12-slim + ffmpeg + uv, зависимости
+  отдельным слоем до кода), один образ `video-admin-backend` для трёх сервисов
+  с разными `command`: `migrate` (одноразовый: `alembic upgrade head` +
+  `init_storage.py`), `api` (uvicorn), `worker` (`rq worker`, обычный, не
+  `SimpleWorker`). `docker/nginx/Dockerfile` — multi-stage: Node собирает
+  Angular, nginx раздаёт статику (`try_files ... /index.html`) и проксирует
+  `/api/` → `api:8000`, `/media/` → `minio:9000`. Порядок старта через
+  healthcheck'и (`pg_isready`, `redis-cli ping`, `mc ready local`) и
+  `depends_on: condition: service_healthy / service_completed_successfully`.
+- Два режима: `docker compose up -d --build` — полный стек;
+  `-f docker-compose.yml -f docker-compose.dev.yml` — dev (api/worker
+  отключены профилем, nginx с `nginx.dev.conf` проксирует на хост). Прежний
+  `docker/nginx/nginx.conf` переименован в `nginx.dev.conf`.
 
 ## Как мы работаем вместе (правила для Claude)
 

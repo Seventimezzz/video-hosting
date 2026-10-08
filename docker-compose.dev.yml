@@ -1,0 +1,25 @@
+# Режим разработки. Накладывается поверх docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# В Docker остаются postgres, redis, minio, migrate и nginx. FastAPI, RQ-воркер и
+# ng serve запускаются на хосте как раньше — с hot reload и отладчиком.
+
+services:
+  # Профиль, который никто не включает, = сервис не стартует.
+  api:
+    profiles: [full-stack]
+  worker:
+    profiles: [full-stack]
+
+  # Вместо образа со статикой — голый nginx с dev-конфигом, который проксирует
+  # на host.docker.internal (uvicorn :8000 и ng serve :4200 на твоей машине).
+  nginx:
+    build: !reset null
+    image: nginx:stable-alpine
+    volumes:
+      - ./docker/nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on: !override
+      - minio
